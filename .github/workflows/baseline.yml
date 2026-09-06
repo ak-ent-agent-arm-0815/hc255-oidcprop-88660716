@@ -1,0 +1,17 @@
+name: hc255 baseline entitlement control
+on: workflow_dispatch
+permissions: {contents: read, id-token: write}
+jobs:
+  token:
+    runs-on: ubuntu-latest
+    steps:
+      - shell: bash
+        env: {CLAIM_NAME: repo_property_hc255_oidc_baseline_88660839}
+        run: |
+          r=$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=hc255-baseline")
+          t=$(python3 -c 'import json,sys;print(json.load(sys.stdin)["value"])' <<<"$r")
+          TOKEN="$t" python3 - <<'PY'
+          import os,json,base64
+          p=os.environ['TOKEN'].split('.')[1];p+='='*(-len(p)%4);c=json.loads(base64.urlsafe_b64decode(p));k=os.environ['CLAIM_NAME']
+          print('BASELINE_CLAIM_NAME='+k);print('BASELINE_CLAIM_VALUE='+str(c.get(k)));assert c.get(k)=='trusted'
+          PY
